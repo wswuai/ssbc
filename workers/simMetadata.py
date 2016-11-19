@@ -8,7 +8,7 @@ from threading import Timer, Thread
 from time import sleep, time
 from hashlib import sha1
 
-from simdht_worker import entropy
+from util import entropy
 from bencode import bencode, bdecode
 
 

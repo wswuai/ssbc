@@ -12,7 +12,7 @@ import MySQLdb.cursors
 
 SRC_HOST = '127.0.0.1'
 SRC_USER = 'root'
-SRC_PASS = ''
+SRC_PASS = 'pwdpwdpwd'
 DST_HOST = '127.0.0.1'
 DST_USER = 'root'
 DST_PASS = ''

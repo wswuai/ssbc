@@ -17,7 +17,6 @@ import json
 import socket
 import threading
 from hashlib import sha1
-from random import randint
 from struct import unpack
 from socket import inet_ntoa
 from threading import Timer, Thread
@@ -25,10 +24,11 @@ from time import sleep
 from collections import deque
 from Queue import Queue
 
+from util import entropy
+
 import pygeoip
 import MySQLdb as mdb
 try:
-    raise
     import libtorrent as lt
     import ltMetadata
 except:
@@ -42,7 +42,7 @@ from metadata import save_metadata
 
 DB_HOST = '127.0.0.1'
 DB_USER = 'root'
-DB_PASS = ''
+DB_PASS = 'pwdpwdpwd'
 BOOTSTRAP_NODES = (
     ("router.bittorrent.com", 6881),
     ("dht.transmissionbt.com", 6881),
@@ -59,10 +59,11 @@ geoip = pygeoip.GeoIP('GeoIP.dat')
 
 
 def is_ip_allowed(ip):
-    return geoip.country_code_by_addr(ip) not in ('CN','TW','HK')
+    return geoip.country_code_by_addr(ip) not in ('CN', 'TW', 'HK')
 
-def entropy(length):
-    return "".join(chr(randint(0, 255)) for _ in xrange(length))
+
+# def entropy(length):
+#     return "".join(chr(randint(0, 255)) for _ in xrange(length))
 
 
 def random_id():
@@ -78,9 +79,9 @@ def decode_nodes(nodes):
         return n
 
     for i in range(0, length, 26):
-        nid = nodes[i:i+20]
-        ip = inet_ntoa(nodes[i+20:i+24])
-        port = unpack("!H", nodes[i+24:i+26])[0]
+        nid = nodes[i:i + 20]
+        ip = inet_ntoa(nodes[i + 20:i + 24])
+        port = unpack("!H", nodes[i + 24:i + 26])[0]
         n.append((nid, ip, port))
 
     return n
@@ -91,11 +92,10 @@ def timer(t, f):
 
 
 def get_neighbor(target, nid, end=10):
-    return target[:end]+nid[end:]
+    return target[:end] + nid[end:]
 
 
 class KNode(object):
-
     def __init__(self, nid, ip, port):
         self.nid = nid
         self.ip = ip
@@ -103,7 +103,6 @@ class KNode(object):
 
 
 class DHTClient(Thread):
-
     def __init__(self, max_node_qsize):
         Thread.__init__(self)
         self.setDaemon(True)
@@ -114,8 +113,8 @@ class DHTClient(Thread):
     def send_krpc(self, msg, address):
         try:
             self.ufd.sendto(bencode(msg), address)
-        except Exception:
-            pass
+        except Exception, e:
+            print e.message
 
     def send_find_node(self, address, nid=None):
         nid = get_neighbor(nid, self.nid) if nid else self.nid
@@ -164,7 +163,6 @@ class DHTClient(Thread):
 
 
 class DHTServer(DHTClient):
-
     def __init__(self, master, bind_ip, bind_port, max_node_qsize):
         DHTClient.__init__(self, max_node_qsize)
 
@@ -181,7 +179,6 @@ class DHTServer(DHTClient):
         self.ufd.bind((self.bind_ip, self.bind_port))
 
         timer(RE_JOIN_DHT_INTERVAL, self.re_join_DHT)
-
 
     def run(self):
         self.re_join_DHT()
@@ -300,7 +297,6 @@ class Master(Thread):
         save_metadata(self.dbcurr, binhash, address, start_time, data)
         self.n_new += 1
 
-
     def run(self):
         self.name = threading.currentThread().getName()
         print self.name, 'started'
@@ -327,15 +323,21 @@ class Master(Thread):
             if y:
                 self.n_valid += 1
                 # 更新最近发现时间，请求数
-                self.dbcurr.execute('UPDATE search_hash SET last_seen=%s, requests=requests+1 WHERE info_hash=%s', (utcnow, info_hash))
+                self.dbcurr.execute('UPDATE search_hash SET last_seen=%s, requests=requests+1 WHERE info_hash=%s',
+                                    (utcnow, info_hash))
             else:
+                # TODO : FUCKING POISON! -- 艹你在代码里下毒....
+                # TODO : create new Thread causes massive sys cpu cost ! -- confirmed
+                # TODO : impl this as a producer - consumer pattern!
                 if dtype == 'pt':
-                    t = threading.Thread(target=simMetadata.download_metadata, args=(address, binhash, self.metadata_queue))
+                    t = threading.Thread(target=simMetadata.download_metadata,
+                                         args=(address, binhash, self.metadata_queue))
                     t.setDaemon(True)
                     t.start()
                     self.n_downloading_pt += 1
                 elif dtype == 'lt' and self.n_downloading_lt < MAX_QUEUE_LT:
-                    t = threading.Thread(target=ltMetadata.download_metadata, args=(address, binhash, self.metadata_queue))
+                    t = threading.Thread(target=ltMetadata.download_metadata,
+                                         args=(address, binhash, self.metadata_queue))
                     t.setDaemon(True)
                     t.start()
                     self.n_downloading_lt += 1
@@ -379,12 +381,10 @@ if __name__ == "__main__":
     master = Master()
     master.start()
 
-    rpcthread = threading.Thread(target=rpc_server)
-    rpcthread.setDaemon(True)
-    rpcthread.start()
+    # rpcthread = threading.Thread(target=rpc_server)
+    # rpcthread.setDaemon(True)
+    # rpcthread.start()
 
     dht = DHTServer(master, "0.0.0.0", 6881, max_node_qsize=200)
     dht.start()
     dht.auto_send_find_node()
-
-
