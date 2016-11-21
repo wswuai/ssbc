@@ -5,7 +5,7 @@ import logging
 
 get_request_queue = Queue(200)
 
-announce_peer_queue = Queue(1000)
+announce_peer_queue = Queue(100000)
 
 metadata_queue = Queue(5000)
 

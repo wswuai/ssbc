@@ -110,6 +110,7 @@ def recvall(the_socket, timeout=5):
 def download_metadata(address, binhash, timeout):
     metadata = None
     start_time = time()
+    the_socket = None
     try:
         the_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         the_socket.settimeout(timeout)
@@ -140,6 +141,7 @@ def download_metadata(address, binhash, timeout):
 
         metadata = "".join(metadata)
 
+        the_socket.close()
         return binhash, address, metadata, start_time
 
     finally:
@@ -176,4 +178,4 @@ class MetaDataCrawler(Thread):
                         self.on_crawled_failed(binhash)
 
             except Exception, e:
-                logging.debug(" error occured while MetaDataCrawler Run : " + str(e))
+                logging.error(" error occured while MetaDataCrawler Run : " + str(e))

@@ -50,7 +50,7 @@ class torrentClientMetaCrawler(threading.Thread):
                         self.task_queue.qsize()))
                 self.download_metadata(address, infohash)
             except Exception, e:
-                logging.debug("error occured while downloading metadata")
+                logging.error("error occured while downloading metadata : " + e.message)
 
     def _fetch_torrent(self, binhash):
         infohash = binhash.encode('hex')
