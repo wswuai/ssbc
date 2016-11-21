@@ -9,7 +9,7 @@ import xmlrpclib
 from flask import Flask, request, abort
 import pygeoip
 
-from bencode import bencode
+from bencodee import bencode
 
 geoip = pygeoip.GeoIP('GeoIP.dat')
 

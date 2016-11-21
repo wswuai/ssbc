@@ -37,7 +37,7 @@ except:
 
 import metautils
 import simMetadata
-from bencode import bencode, bdecode
+from bencodee import bencode, bdecode
 from metadata import save_metadata
 
 DB_HOST = '127.0.0.1'
