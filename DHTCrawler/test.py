@@ -24,15 +24,15 @@ lt_crawlers = []
 
 DHT_CRAWLER_THREAD = 100
 
-METADATA_CRAWLER_THREAD = 500
+METADATA_CRAWLER_THREAD = 0
 
-SIM_CRAWLER_TIMEOUT = 5
+SIM_CRAWLER_TIMEOUT = 7
 
 LIB_TORRENT_CRAWLER_TIMEOUT = 60
 
 LIBTORRENT_CRAWLER_INSTANCES = 1
 
-LIBTORRENT_CRAWLER_CONCURRENT_TASK = 500
+LIBTORRENT_CRAWLER_CONCURRENT_TASK = 50
 
 DB_WRITER_THREAD = 2
 
@@ -94,17 +94,6 @@ if __name__ == '__main__':
                       (now_success - last_success) / REFRESH_INTERVAL,
                   )
 
-
-
-
-
-            # for server in servers:
-            #     if not server.isAlive():
-            #         logging.fatal("Server DEAD : " + str(server))
-
-            # for crawler in simple_crawlers:
-            #     if not crawler.isAlive():
-            #         logging.fatal("Crawler DEAD : " + str(crawler))
         except KeyboardInterrupt, e:
             print(" exit caused by Keyboard Interrupt")
             os._exit(0)

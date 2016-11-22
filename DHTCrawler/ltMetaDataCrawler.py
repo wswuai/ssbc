@@ -72,30 +72,30 @@ class torrentClientMetaCrawler(threading.Thread):
         if handle is None:
             return
 
-        start_time = time.time()
-        status = self.session.status()
-        logging.debug('Downloading Metadata:' + str(url))
-        handle.set_sequential_download(1)
         down_path = None
-        success = False
-        for i in xrange(0, self.timeout):
-            gevent.sleep(1)
-            if handle.has_metadata():
-                success = True
-                info = handle.get_torrent_info()
-                down_path = '/tmp/downloads/%s' % info.name()
-                meta = info.metadata()
-                dinfo = parse_metadata(meta)
-                logging.debug ("[SUCCESS][LTCRAWLER] " + str(dinfo))
-                if self.on_meta_fetched:
-                    self.on_meta_fetched(infohash, None, meta, start_time)
+        try:
+            start_time = time.time()
+            logging.debug('Downloading Metadata:' + str(url))
+            handle.set_sequential_download(1)
+            success = False
+            for i in xrange(0, self.timeout):
+                gevent.sleep(1)
+                if handle.has_metadata():
+                    success = True
+                    info = handle.get_torrent_info()
+                    down_path = '/tmp/downloads/%s' % info.name()
+                    meta = info.metadata()
+                    dinfo = parse_metadata(meta)
+                    logging.debug("[SUCCESS][LTCRAWLER] " + str(dinfo))
+                    if self.on_meta_fetched:
+                        self.on_meta_fetched(infohash, None, meta, start_time)
+        finally:
+            self.session.remove_torrent(handle)
+            self.delete_torrent_file(down_path)
 
-        self.delete_torrent_file(down_path)
-        self.session.remove_torrent(handle)
-        if self.on_crawled_failed:
+        if success == False and self.on_crawled_failed:
             self.on_crawled_failed(binhash)
-
-        logging.debug("Downloading Timed out ")
+            logging.debug("Downloading Timed out ")
 
     def delete_torrent_file(self, down_path):
         if down_path and os.path.exists(down_path):
