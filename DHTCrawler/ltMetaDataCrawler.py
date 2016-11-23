@@ -29,13 +29,15 @@ class torrentClientMetaCrawler(threading.Thread):
         self.setName(name)
         self.session = lt.session()
         self.timeout = timeout
-        self.pool = gevent.pool.Pool(concurrent)
+        # self.pool = gevent.pool.Pool(concurrent)
+        self.concurrent = concurrent
         r = random.randrange(20000, 30000)
         self.session.listen_on(r, r + 10)
         self.session.add_dht_router('router.bittorrent.com', 6881)
         self.session.add_dht_router('router.utorrent.com', 6881)
         self.session.add_dht_router('dht.transmission.com', 6881)
         self.session.start_dht()
+        self.handles = []
         self.task_queue = task_queue
         self.on_meta_fetched = None
         self.on_crawled_failed = None
@@ -46,8 +48,7 @@ class torrentClientMetaCrawler(threading.Thread):
             try:
                 infohash, address = self.task_queue.get()
                 logging.debug(
-                    "get infohash :" + infohash.encode('hex') + "from queue. current length" + str(
-                        self.task_queue.qsize()))
+                    "get infohash :" + infohash.encode('hex') + "from queue. current length" + str( self.task_queue.qsize()))
                 self.download_metadata(address, infohash)
             except Exception, e:
                 logging.error("error occured while downloading metadata : " + e.message)
@@ -101,5 +102,33 @@ class torrentClientMetaCrawler(threading.Thread):
         if down_path and os.path.exists(down_path):
             os.system('rm -rf "%s"' % down_path)
 
+    def add_magnet_job(self,binhash):
+        infohash = binhash.encode('hex')
+        name = infohash.upper()
+        url = 'magnet:?xt=urn:btih:%s' % (name,)
+        data = ''
+        params = {
+            'save_path': self.save_path,
+            'storage_mode': lt.storage_mode_t(2),
+            'paused': False,
+            'auto_managed': False,
+            'duplicate_is_error': True}
+        handle = None
+        try:
+            handle = lt.add_magnet_uri(self.session, url, params)
+        except:
+            return
+        if handle is None:
+            return
+
+        handle.set_sequential_download(1)
+        handle.set_download_limit(1)
+        handle.set_upload_limit(1)
+
+        self.handles.append(handle)
+
     def download_metadata(self, address, binhash):
-        self.pool.spawn(self._fetch_torrent, binhash)
+        while True:
+            if self.session.get_torrents() >= self.concurrent:
+                time.sleep(1)
+
