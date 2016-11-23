@@ -7,6 +7,7 @@ from DHTCrawler import DHTServer
 from MetaDataCrawler import MetaDataCrawler
 from ltMetaDataCrawler import torrentClientMetaCrawler
 
+from DBWriter import DBWriter
 import threading
 import logging
 from time import sleep
@@ -22,9 +23,17 @@ servers = []
 simple_crawlers = []
 lt_crawlers = []
 
+DB_HOST = '127.0.0.1'
+
+DB_PORT = 3306
+
+DB_USER = 'root'
+
+DB_PWD = 'pwdpwdpwd'
+
 DHT_CRAWLER_THREAD = 100
 
-METADATA_CRAWLER_THREAD = 0
+METADATA_CRAWLER_THREAD = 1000
 
 SIM_CRAWLER_TIMEOUT = 7
 
@@ -34,7 +43,7 @@ LIBTORRENT_CRAWLER_INSTANCES = 0
 
 LIBTORRENT_CRAWLER_CONCURRENT_TASK = 50
 
-DB_WRITER_THREAD = 2
+DB_WRITER_INSTANCES = 1
 
 if __name__ == '__main__':
     REFRESH_INTERVAL = 2
@@ -65,6 +74,11 @@ if __name__ == '__main__':
         ltCrawler.on_crawled_failed = context.on_crawled_failed
         ltCrawler.start()
         lt_crawlers.append(ltCrawler)
+
+    for i in range(0, DB_WRITER_INSTANCES):
+        dbwriter = DBWriter(q=context.metadata_queue, host=DB_HOST,port=3306, username=DB_USER, passwd=DB_PWD)
+        dbwriter.setDaemon(True)
+        dbwriter.start()
 
     print "all thread created! start crawling !"
 
