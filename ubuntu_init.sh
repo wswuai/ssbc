@@ -21,4 +21,4 @@ pip install pygeoip
 
 apt-get install -y mysql-server
 
-
+echo " ulimit -u 10000 \n ulimit -n 8192 \n ulimit -d unlimited \n ulimit -m unlimited \n ulimit -s unlimited \n ulimit -t unlimited \n ulimit -v unlimited" >> /etc/profile
